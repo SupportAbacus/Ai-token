@@ -52,14 +52,14 @@ def _prompt_interactive_model(project: str) -> str:
     """Ask user to pick a model tier for an interactive session, with 3s timeout."""
     if not sys.stdin.isatty():
         return MODEL_SONNET
-    sys.stdout.write(f"→ {project}  Quick[h] / Work[s] / Deep[o]? (Enter=Sonnet, 3s): ")
+    sys.stdout.write(f"→ {project}  Quick[h] / Work[s] / Deep[o]? (Enter=Haiku, 10s): ")
     sys.stdout.flush()
     if sys.platform == 'win32':
         import msvcrt
         import time as _time
         start = _time.time()
         choice = ''
-        while _time.time() - start < 3:
+        while _time.time() - start < 10:
             if msvcrt.kbhit():
                 ch = msvcrt.getwche()
                 if ch in ('\r', '\n'):
@@ -72,17 +72,17 @@ def _prompt_interactive_model(project: str) -> str:
             sys.stdout.write('\n')
     else:
         import select as _select
-        ready, _, _ = _select.select([sys.stdin], [], [], 3)
+        ready, _, _ = _select.select([sys.stdin], [], [], 10)
         if ready:
             choice = sys.stdin.readline().strip().lower()
         else:
             sys.stdout.write('\n')
             choice = ''
-    if choice.startswith('h'):
-        return MODEL_HAIKU
+    if choice.startswith('s'):
+        return MODEL_SONNET
     if choice.startswith('o'):
         return MODEL_OPUS
-    return MODEL_SONNET
+    return MODEL_HAIKU
 
 
 def _detect_project() -> str:
@@ -123,7 +123,7 @@ def main():
     if not task_parts:
         project = _detect_project()
         if dry_run:
-            print(f"→ Sonnet | {project}  (interactive — would prompt h/s/o)")
+            print(f"→ Haiku | {project}  (interactive — would prompt h/s/o)")
             return
         model = _prompt_interactive_model(project)
         print(f"→ {_NAMES.get(model, model)} | {project}")

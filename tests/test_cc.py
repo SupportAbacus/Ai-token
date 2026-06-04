@@ -229,7 +229,7 @@ def test_cc_detects_project_polymedicure():
 def test_cc_dry_run_no_task_shows_prompt_hint():
     code, out, _ = _run(['--dry-run'])
     assert code == 0
-    assert 'Sonnet' in out
+    assert 'Haiku' in out
     assert 'interactive' in out
     assert 'h/s/o' in out
 
