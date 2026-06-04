@@ -178,3 +178,63 @@ def test_format_stats_zero_savings_when_all_sonnet():
     counts = {MODEL_HAIKU: 0, MODEL_SONNET: 5, MODEL_OPUS: 0}
     output = format_stats(counts)
     assert "$0.00" in output
+
+
+# ── cc CLI ────────────────────────────────────────────────────────────────────
+
+CC = Path(__file__).resolve().parent.parent / 'cc'
+
+def _run(args, cwd=None):
+    result = subprocess.run(
+        [sys.executable, str(CC)] + args,
+        capture_output=True, text=True,
+        cwd=cwd or str(Path(__file__).resolve().parent.parent)
+    )
+    return result.returncode, result.stdout, result.stderr
+
+def test_cc_no_args_prints_usage():
+    code, out, _ = _run([])
+    assert code == 0
+    assert 'Usage' in out
+
+def test_cc_stats_no_data():
+    code, out, _ = _run(['--stats'])
+    assert code == 0
+    assert 'sessions' in out.lower() or 'No sessions' in out
+
+def test_cc_dry_run_haiku():
+    code, out, _ = _run(['--dry-run', 'check the apache logs'])
+    assert code == 0
+    assert 'Haiku' in out
+
+def test_cc_dry_run_sonnet():
+    code, out, _ = _run(['--dry-run', 'write a report about the incident'])
+    assert code == 0
+    assert 'Sonnet' in out
+
+def test_cc_dry_run_opus():
+    code, out, _ = _run(['--dry-run', 'comprehensive security audit from scratch'])
+    assert code == 0
+    assert 'Opus' in out
+
+def test_cc_model_override_to_haiku():
+    code, out, _ = _run(['--dry-run', '--model', 'haiku', 'write a report'])
+    assert code == 0
+    assert 'Haiku' in out
+
+def test_cc_model_override_to_opus():
+    code, out, _ = _run(['--dry-run', '--model', 'opus', 'check logs'])
+    assert code == 0
+    assert 'Opus' in out
+
+def test_cc_detects_project_polymedicure():
+    code, out, _ = _run(
+        ['--dry-run', 'check logs'],
+        cwd='/home/rohit-tanwar/claude-work/Polymedicure'
+    )
+    assert code == 0
+    assert 'Polymedicure' in out or 'polymedicure' in out
+
+def test_cc_empty_task_exits_nonzero():
+    code, out, err = _run(['--dry-run'])
+    assert code != 0
