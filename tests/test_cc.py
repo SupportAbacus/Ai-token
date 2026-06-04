@@ -82,3 +82,99 @@ def test_classify_case_insensitive_sonnet():
 
 def test_classify_opus_wins_over_haiku():
     assert classify("check and do a full assessment") == MODEL_OPUS
+
+
+# ── log_session ───────────────────────────────────────────────────────────────
+
+from logger import log_session, get_stats, format_stats
+
+def test_log_session_creates_file():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        log_path = Path(tmpdir) / 'log.csv'
+        log_session(MODEL_HAIKU, "check logs", "polymedicure", log_file=log_path)
+        assert log_path.exists()
+
+def test_log_session_writes_correct_fields():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        log_path = Path(tmpdir) / 'log.csv'
+        log_session(MODEL_SONNET, "write report", "prayag", log_file=log_path)
+        rows = list(csv.reader(open(log_path)))
+        assert len(rows) == 1
+        assert rows[0][2] == 'prayag'
+        assert rows[0][3] == MODEL_SONNET
+        assert rows[0][4] == 'write report'
+
+def test_log_session_truncates_long_task():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        log_path = Path(tmpdir) / 'log.csv'
+        log_session(MODEL_HAIKU, "x" * 200, "proj", log_file=log_path)
+        rows = list(csv.reader(open(log_path)))
+        assert len(rows[0][4]) <= 100
+
+def test_log_session_appends_multiple():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        log_path = Path(tmpdir) / 'log.csv'
+        log_session(MODEL_HAIKU, "task one", "proj", log_file=log_path)
+        log_session(MODEL_SONNET, "task two", "proj", log_file=log_path)
+        rows = list(csv.reader(open(log_path)))
+        assert len(rows) == 2
+
+# ── get_stats ─────────────────────────────────────────────────────────────────
+
+def test_get_stats_missing_file_returns_zeros():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        log_path = Path(tmpdir) / 'nonexistent.csv'
+        stats = get_stats(7, log_file=log_path)
+        assert stats[MODEL_HAIKU] == 0
+        assert stats[MODEL_SONNET] == 0
+        assert stats[MODEL_OPUS] == 0
+
+def test_get_stats_counts_correctly():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        log_path = Path(tmpdir) / 'log.csv'
+        today = date.today().strftime('%Y-%m-%d')
+        with open(log_path, 'w', newline='') as f:
+            w = csv.writer(f)
+            w.writerow([today, '10:00', 'proj', MODEL_HAIKU, 'check x'])
+            w.writerow([today, '11:00', 'proj', MODEL_HAIKU, 'read y'])
+            w.writerow([today, '12:00', 'proj', MODEL_SONNET, 'write z'])
+        stats = get_stats(7, log_file=log_path)
+        assert stats[MODEL_HAIKU] == 2
+        assert stats[MODEL_SONNET] == 1
+        assert stats[MODEL_OPUS] == 0
+
+def test_get_stats_ignores_old_entries():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        log_path = Path(tmpdir) / 'log.csv'
+        with open(log_path, 'w', newline='') as f:
+            w = csv.writer(f)
+            w.writerow(['2020-01-01', '10:00', 'proj', MODEL_HAIKU, 'old task'])
+        stats = get_stats(7, log_file=log_path)
+        assert stats[MODEL_HAIKU] == 0
+
+# ── format_stats ──────────────────────────────────────────────────────────────
+
+def test_format_stats_no_sessions():
+    counts = {MODEL_HAIKU: 0, MODEL_SONNET: 0, MODEL_OPUS: 0}
+    assert format_stats(counts) == "No sessions logged yet."
+
+def test_format_stats_shows_model_counts():
+    counts = {MODEL_HAIKU: 5, MODEL_SONNET: 3, MODEL_OPUS: 1}
+    output = format_stats(counts)
+    assert "Haiku" in output
+    assert "Sonnet" in output
+    assert "Opus" in output
+    assert " 5" in output
+    assert " 3" in output
+
+def test_format_stats_shows_savings():
+    counts = {MODEL_HAIKU: 10, MODEL_SONNET: 5, MODEL_OPUS: 0}
+    output = format_stats(counts)
+    # 10 haiku @ $0.01 + 5 sonnet @ $0.15 = $0.85 actual
+    # 15 sonnet @ $0.15 = $2.25 → saving = $1.40
+    assert "$1.40" in output
+
+def test_format_stats_zero_savings_when_all_sonnet():
+    counts = {MODEL_HAIKU: 0, MODEL_SONNET: 5, MODEL_OPUS: 0}
+    output = format_stats(counts)
+    assert "$0.00" in output
