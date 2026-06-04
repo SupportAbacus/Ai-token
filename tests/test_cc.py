@@ -182,7 +182,7 @@ def test_format_stats_zero_savings_when_all_sonnet():
 
 # ── cc CLI ────────────────────────────────────────────────────────────────────
 
-CC = Path(__file__).resolve().parent.parent / 'cai'
+CC = Path(__file__).resolve().parent.parent / 'claude'
 
 def _run(args, cwd=None):
     result = subprocess.run(
@@ -192,12 +192,7 @@ def _run(args, cwd=None):
     )
     return result.returncode, result.stdout, result.stderr
 
-def test_cc_no_args_prints_usage():
-    code, out, _ = _run([])
-    assert code == 0
-    assert 'Usage' in out
-
-def test_cc_stats_no_data():
+def test_cc_stats_flag_works():
     code, out, _ = _run(['--stats'])
     assert code == 0
     assert 'sessions' in out.lower() or 'No sessions' in out
@@ -217,15 +212,11 @@ def test_cc_dry_run_opus():
     assert code == 0
     assert 'Opus' in out
 
-def test_cc_model_override_to_haiku():
+def test_cc_explicit_model_passes_through():
+    # When --model is given, we don't route — we pass through to real claude unchanged
     code, out, _ = _run(['--dry-run', '--model', 'haiku', 'write a report'])
     assert code == 0
-    assert 'Haiku' in out
-
-def test_cc_model_override_to_opus():
-    code, out, _ = _run(['--dry-run', '--model', 'opus', 'check logs'])
-    assert code == 0
-    assert 'Opus' in out
+    assert 'passing through' in out
 
 def test_cc_detects_project_polymedicure():
     code, out, _ = _run(
@@ -235,6 +226,12 @@ def test_cc_detects_project_polymedicure():
     assert code == 0
     assert 'Polymedicure' in out or 'polymedicure' in out
 
-def test_cc_empty_task_exits_nonzero():
-    code, out, err = _run(['--dry-run'])
-    assert code != 0
+def test_cc_dry_run_no_task_passes_through():
+    code, out, _ = _run(['--dry-run'])
+    assert code == 0
+    assert 'interactively' in out
+
+def test_cc_model_passthrough_dry_run():
+    code, out, _ = _run(['--dry-run', '--model', 'haiku', 'some task'])
+    assert code == 0
+    assert 'passing through' in out
