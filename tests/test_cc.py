@@ -182,7 +182,7 @@ def test_format_stats_zero_savings_when_all_sonnet():
 
 # ── cc CLI ────────────────────────────────────────────────────────────────────
 
-CC = Path(__file__).resolve().parent.parent / 'cc'
+CC = Path(__file__).resolve().parent.parent / 'cai'
 
 def _run(args, cwd=None):
     result = subprocess.run(

@@ -2,7 +2,7 @@ import csv
 from datetime import datetime, timedelta, date
 from pathlib import Path
 
-CC_DIR = Path.home() / '.cc'
+CC_DIR = Path.home() / '.cai'
 LOG_FILE = CC_DIR / 'log.csv'
 
 _COST = {
