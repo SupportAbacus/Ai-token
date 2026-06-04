@@ -13,12 +13,11 @@ _NAMES = {
     'claude-sonnet-4-6': 'Sonnet',
     'claude-opus-4-8': 'Opus',
 }
-_MAP = {'haiku': 'claude-haiku-4-5-20251001', 'sonnet': 'claude-sonnet-4-6', 'opus': 'claude-opus-4-8'}
-_WORK = Path('/home/rohit-tanwar/claude-work')
+_WORK = Path.home() / 'claude-work'
 
 
 def _real_claude() -> str:
-    """Return the real claude binary path (not our wrapper)."""
+    """Return the real claude binary path, not our wrapper."""
     saved = Path.home() / '.cai' / 'real_claude'
     if saved.exists():
         path = saved.read_text().strip()
@@ -26,34 +25,43 @@ def _real_claude() -> str:
             return path
     # Fallback: search PATH, skip ourselves
     our_file = Path(__file__).resolve()
-    for d in os.environ.get('PATH', '').split(':'):
+    names = ['claude.cmd', 'claude.exe', 'claude'] if sys.platform == 'win32' else ['claude']
+    for d in os.environ.get('PATH', '').split(os.pathsep):
         if not d:
             continue
-        candidate = Path(d) / 'claude'
-        try:
-            if candidate.exists() and candidate.resolve() != our_file:
-                return str(candidate)
-        except OSError:
-            continue
+        for name in names:
+            candidate = Path(d) / name
+            try:
+                if candidate.exists() and candidate.resolve() != our_file:
+                    return str(candidate)
+            except OSError:
+                continue
     return 'claude'
+
+
+def _exec(cmd: list) -> None:
+    """Replace current process with cmd (Unix) or spawn and exit (Windows)."""
+    if sys.platform == 'win32':
+        import subprocess
+        sys.exit(subprocess.run(cmd).returncode)
+    else:
+        os.execvp(cmd[0], cmd)
 
 
 def _detect_project() -> str:
     cwd = Path.cwd()
-    for base in [_WORK, Path.home() / 'claude-work']:
-        try:
-            parts = cwd.relative_to(base).parts
-            if parts:
-                return parts[0]
-        except ValueError:
-            continue
+    try:
+        parts = cwd.relative_to(_WORK).parts
+        if parts:
+            return parts[0]
+    except ValueError:
+        pass
     return cwd.name
 
 
 def main():
     args = sys.argv[1:]
 
-    # Our special flags
     if '--stats' in args:
         print(format_stats(get_stats(7)))
         return
@@ -62,16 +70,15 @@ def main():
     if dry_run:
         args = [a for a in args if a != '--dry-run']
 
-    # --model already given → pass through unchanged, no routing
+    # --model already given → pass through unchanged
     if '--model' in args or '-m' in args:
         if dry_run:
             print("--model already specified — passing through unchanged")
             return
         real = _real_claude()
-        os.execvp(real, [real] + [a for a in sys.argv[1:] if a != '--dry-run'])
+        _exec([real] + [a for a in sys.argv[1:] if a != '--dry-run'])
         return
 
-    # Separate task (positional args) from flags
     task_parts = [a for a in args if not a.startswith('-')]
     flag_parts = [a for a in args if a.startswith('-')]
 
@@ -81,10 +88,9 @@ def main():
             print("No task — would open claude interactively")
             return
         real = _real_claude()
-        os.execvp(real, [real] + args)
+        _exec([real] + args)
         return
 
-    # Classify and route
     task = ' '.join(task_parts)
     model = classify(task)
     project = _detect_project()
@@ -95,7 +101,7 @@ def main():
 
     log_session(model, task, project)
     real = _real_claude()
-    os.execvp(real, [real, '--model', model] + flag_parts + task_parts)
+    _exec([real, '--model', model] + flag_parts + task_parts)
 
 
 if __name__ == '__main__':

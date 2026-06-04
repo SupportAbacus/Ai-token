@@ -1,8 +1,10 @@
 # Ai-token — Smart Model Router for Claude Code
 
-Type `cai` instead of `claude`. It picks the cheapest model that can handle your task — automatically.
+Type `claude` as normal. The router automatically picks the cheapest model that can handle your task — no behavior change required from your team.
 
 ## Install
+
+### Linux / macOS
 
 ```bash
 git clone https://github.com/SupportAbacus/Ai-token
@@ -10,48 +12,71 @@ cd Ai-token && ./install.sh
 source ~/.bashrc   # or source ~/.zshrc
 ```
 
+### Windows (PowerShell)
+
+```powershell
+git clone https://github.com/SupportAbacus/Ai-token
+cd Ai-token
+.\install.ps1
+# Restart PowerShell after install
+```
+
+> **Requires:** Python 3 and Claude Code CLI already installed.
+
+---
+
 ## Usage
+
+Nothing changes — just type `claude` as you always do:
 
 ```bash
 # Recon tasks → Haiku (~15× cheaper than Sonnet)
-cai "check polymedicure apache logs for errors"
-cai "verify smtp port 465 is open on prayag server"
-cai "show me the last 50 lines of the error log"
-cai "list all cron jobs on the server"
+claude "check polymedicure apache logs for errors"
+claude "verify smtp port 465 is open"
+claude "show me the last 50 lines of the error log"
+claude "list all cron jobs on the server"
 
 # Write/Analyze tasks → Sonnet
-cai "write RCA report for today's incident"
-cai "fix the ModSec rule for Chrome/148"
-cai "analyze why TTFB is 7 seconds"
+claude "write RCA report for today's incident"
+claude "fix the ModSec rule for Chrome/148"
+claude "analyze why TTFB is 7 seconds"
 
 # Complex tasks → Opus
-cai "architect a full security remediation plan from scratch"
-cai "comprehensive security audit of the Acaiord compromise"
+claude "architect a full security remediation plan from scratch"
+claude "comprehensive security audit of the Accord compromise"
 
-# Override the model
-cai --model sonnet "check the logs"
-cai --model haiku "write a quick summary"
+# Already have a model in mind? Pass --model — router steps aside
+claude --model sonnet "check the logs"
 
-# Preview routing without launching Claude
-cai --dry-run "check apache logs for errors"
+# Interactive session — passes straight through, unchanged
+claude
 
-# View 7-day usage and estimated savings
-cai --stats
+# Preview routing without launching
+claude --dry-run "write a report about the incident"
+
+# 7-day usage + estimated savings
+claude --stats
 ```
+
+---
 
 ## How routing works
 
 | Task keywords | Model | Cost vs Sonnet |
 |---|---|---|
-| check, read, show, list, grep, find, verify, status, ssh, cat… | **Haiku** | ~15× cheaper |
+| check, read, show, list, grep, find, verify, status, ssh, tail… | **Haiku** | ~15× cheaper |
 | write, fix, plan, analyze, debug, rca, investigate, build… | **Sonnet** | baseline |
 | architect, comprehensive, full assessment, from scratch, complete audit… | **Opus** | ~3× more |
 
-Unmatched tasks default to **Sonnet**.
+- Unmatched tasks default to **Sonnet**
+- Explicit `--model` flag → always passed through unchanged
+- No task (just `claude`) → opens interactive session unchanged
+
+---
 
 ## Logs
 
-Every session is saved to `~/.cai/log.csv`:
+Sessions are saved to `~/.cai/log.csv` (Linux/macOS) or `%USERPROFILE%\.cai\log.csv` (Windows):
 
 ```
 date,time,project,model,task
@@ -59,14 +84,37 @@ date,time,project,model,task
 2026-06-04,15:10,Polymedicure,claude-sonnet-4-6,write RCA report
 ```
 
+---
+
 ## Update
 
+### Linux / macOS
 ```bash
 cd Ai-token && git pull && ./install.sh
 ```
+
+### Windows
+```powershell
+cd Ai-token; git pull; .\install.ps1
+```
+
+---
 
 ## Run tests
 
 ```bash
 python3 -m pytest tests/ -v
 ```
+
+---
+
+## Platform compatibility
+
+| Feature | Linux | macOS | Windows |
+|---|---|---|---|
+| Model routing | ✅ | ✅ | ✅ |
+| Session logging | ✅ | ✅ | ✅ |
+| `--stats` | ✅ | ✅ | ✅ |
+| Process replacement | `execvp` | `execvp` | `subprocess` |
+| Install script | `install.sh` | `install.sh` | `install.ps1` |
+| Wrapper | bash shim | bash shim | `claude.cmd` |
