@@ -86,7 +86,7 @@ def test_classify_opus_wins_over_haiku():
 
 # ── log_session ───────────────────────────────────────────────────────────────
 
-from logger import log_session, get_stats, get_project_stats, format_stats
+from logger import log_session, get_stats, format_stats
 
 def test_log_session_creates_file():
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -178,62 +178,6 @@ def test_format_stats_zero_savings_when_all_sonnet():
     counts = {MODEL_HAIKU: 0, MODEL_SONNET: 5, MODEL_OPUS: 0}
     output = format_stats(counts)
     assert "$0.00" in output
-
-
-# ── get_project_stats ─────────────────────────────────────────────────────────
-
-def test_get_project_stats_empty_file():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        log_path = Path(tmpdir) / 'nonexistent.csv'
-        assert get_project_stats(7, log_file=log_path) == {}
-
-def test_get_project_stats_groups_by_project():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        log_path = Path(tmpdir) / 'log.csv'
-        today = date.today().strftime('%Y-%m-%d')
-        with open(log_path, 'w', newline='') as f:
-            w = csv.writer(f)
-            w.writerow([today, '10:00', 'Polymedicure', MODEL_HAIKU, 'check logs'])
-            w.writerow([today, '11:00', 'Polymedicure', MODEL_SONNET, 'write report'])
-            w.writerow([today, '12:00', 'Prayag', MODEL_HAIKU, 'verify port'])
-        stats = get_project_stats(7, log_file=log_path)
-        assert stats['Polymedicure'][MODEL_HAIKU] == 1
-        assert stats['Polymedicure'][MODEL_SONNET] == 1
-        assert stats['Prayag'][MODEL_HAIKU] == 1
-
-def test_get_project_stats_ignores_old_entries():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        log_path = Path(tmpdir) / 'log.csv'
-        with open(log_path, 'w', newline='') as f:
-            csv.writer(f).writerow(['2020-01-01', '10:00', 'Polymedicure', MODEL_HAIKU, 'old'])
-        assert get_project_stats(7, log_file=log_path) == {}
-
-# ── format_stats with project breakdown ──────────────────────────────────────
-
-def test_format_stats_with_project_breakdown():
-    counts = {MODEL_HAIKU: 2, MODEL_SONNET: 1, MODEL_OPUS: 0}
-    project_stats = {
-        'Polymedicure': {MODEL_HAIKU: 1, MODEL_SONNET: 1, MODEL_OPUS: 0},
-        'Prayag': {MODEL_HAIKU: 1, MODEL_SONNET: 0, MODEL_OPUS: 0},
-    }
-    output = format_stats(counts, project_stats)
-    assert 'Per project' in output
-    assert 'Polymedicure' in output
-    assert 'Prayag' in output
-
-def test_format_stats_project_cost_correct():
-    counts = {MODEL_HAIKU: 0, MODEL_SONNET: 2, MODEL_OPUS: 0}
-    project_stats = {
-        'Polymedicure': {MODEL_HAIKU: 0, MODEL_SONNET: 2, MODEL_OPUS: 0},
-    }
-    output = format_stats(counts, project_stats)
-    # 2 Sonnet @ $0.15 = $0.30
-    assert '$0.30' in output
-
-def test_format_stats_no_project_stats_unchanged():
-    counts = {MODEL_HAIKU: 1, MODEL_SONNET: 1, MODEL_OPUS: 0}
-    output = format_stats(counts)
-    assert 'Per project' not in output
 
 
 # ── cc CLI ────────────────────────────────────────────────────────────────────

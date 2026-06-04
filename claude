@@ -6,7 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from classifier import classify, MODEL_SONNET, MODEL_HAIKU, MODEL_OPUS
-from logger import log_session, get_stats, get_project_stats, format_stats
+from logger import log_session, get_stats, format_stats
 
 _NAMES = {
     'claude-haiku-4-5-20251001': 'Haiku',
@@ -100,7 +100,7 @@ def main():
     args = sys.argv[1:]
 
     if '--stats' in args:
-        print(format_stats(get_stats(7), get_project_stats(7)))
+        print(format_stats(get_stats(7)))
         return
 
     dry_run = '--dry-run' in args
