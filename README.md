@@ -48,7 +48,7 @@ claude "comprehensive security audit of the Accord compromise"
 # Already have a model in mind? Pass --model — router steps aside
 claude --model sonnet "check the logs"
 
-# Interactive session — passes straight through, unchanged
+# Interactive session — routed to Sonnet, logged as "(interactive)"
 claude
 
 # Preview routing without launching
@@ -70,7 +70,7 @@ claude --stats
 
 - Unmatched tasks default to **Sonnet**
 - Explicit `--model` flag → always passed through unchanged
-- No task (just `claude`) → opens interactive session unchanged
+- No task (just `claude`) → defaults to **Sonnet**, logged as `(interactive)`
 
 ---
 
@@ -82,6 +82,7 @@ Sessions are saved to `~/.cai/log.csv` (Linux/macOS) or `%USERPROFILE%\.cai\log.
 date,time,project,model,task
 2026-06-04,14:32,Polymedicure,claude-haiku-4-5-20251001,check apache logs
 2026-06-04,15:10,Polymedicure,claude-sonnet-4-6,write RCA report
+2026-06-04,16:00,Polymedicure,claude-sonnet-4-6,(interactive)
 ```
 
 ---
