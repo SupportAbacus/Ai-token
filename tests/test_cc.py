@@ -226,10 +226,11 @@ def test_cc_detects_project_polymedicure():
     assert code == 0
     assert 'Polymedicure' in out or 'polymedicure' in out
 
-def test_cc_dry_run_no_task_passes_through():
+def test_cc_dry_run_no_task_routes_sonnet():
     code, out, _ = _run(['--dry-run'])
     assert code == 0
-    assert 'interactively' in out
+    assert 'Sonnet' in out
+    assert 'interactive' in out
 
 def test_cc_model_passthrough_dry_run():
     code, out, _ = _run(['--dry-run', '--model', 'haiku', 'some task'])

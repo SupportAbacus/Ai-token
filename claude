@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from classifier import classify
+from classifier import classify, MODEL_SONNET
 from logger import log_session, get_stats, format_stats
 
 _NAMES = {
@@ -82,13 +82,16 @@ def main():
     task_parts = [a for a in args if not a.startswith('-')]
     flag_parts = [a for a in args if a.startswith('-')]
 
-    # No task → pass through (interactive mode, --help, --version, etc.)
+    # No task → default to Sonnet for interactive sessions
     if not task_parts:
+        project = _detect_project()
         if dry_run:
-            print("No task — would open claude interactively")
+            print(f"→ {_NAMES.get(MODEL_SONNET, MODEL_SONNET)} | {project}  (interactive)")
             return
+        print(f"→ {_NAMES.get(MODEL_SONNET, MODEL_SONNET)} | {project}")
+        log_session(MODEL_SONNET, '(interactive)', project)
         real = _real_claude()
-        _exec([real] + args)
+        _exec([real, '--model', MODEL_SONNET] + args)
         return
 
     task = ' '.join(task_parts)
